@@ -1,33 +1,27 @@
-# Run this script as Administrator
-$TargetName = "Xeno-v1.3.25b.exe"
+$TargetName = "xeno"
+$TargetExe = "xeno.exe"
 
-$RegPaths = @(
-    'Computer\HKEY_CURRENT_USER\Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Compatibility Assistant\Store',
-    'Computer\HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\FeatureUsage\AppSwitched',
-    'Computer\HKEY_CLASSES_ROOT\Local Settings\Software\Microsoft\Windows\Shell\MuiCache',
-    'Computer\HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FeatureUsage\AppLaunch',
-    'Computer\HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\FeatureUsage\ShowJumpView',
-    'Computer\HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\FeatureUsage\AppBadgeUpdated'
+$RegKeys = @(
+    "HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Compatibility Assistant\Store",
+    "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FeatureUsage\AppSwitched",
+    "HKCR:\Local Settings\Software\Microsoft\Windows\Shell\MuiCache",
+    "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FeatureUsage\AppLaunch",
+    "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\FeatureUsage\ShowJumpView",
+    "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\FeatureUsage\AppBadgeUpdated"
 )
 
-foreach ($Path in $RegPaths) {
-    if (Test-Path $Path) {
-        # Search for values containing xeno.exe
-        Get-ItemProperty -Path $Path | Select-Object -Property * | ForEach-Object {
-            $_.PSObject.Properties | Where-Object { $_.Value -match $TargetName } | ForEach-Object {
-                $ValueName = $_.Name
-                $OldValue = $_.Value
-                $NewValue = $OldValue -replace [regex]::Escape($TargetName), $NewName
-                
-                Write-Host "Updating $ValueName in $Path"
-                Set-ItemProperty -Path $Path -Name $ValueName -Value $NewValue
+foreach ($Key in $RegKeys) {
+    if (Test-Path $Key) {
+        Get-ItemProperty -Path $Key | Select-Object * | ForEach-Object {
+            $_.PSObject.Properties | Where-Object { $_.Name -like "*$TargetName*" } | ForEach-Object {
+                Remove-ItemProperty -Path $Key -Name $_.Name -ErrorAction SilentlyContinue
             }
         }
-        # Also check for key names containing xeno.exe
-        Get-ChildItem -Path $Path | Where-Object { $_.PSChildName -match $TargetName } | ForEach-Object {
-            Write-Host "Found key to rename: $($_.PSChildName)"
-            # Note: Renaming keys is complex, often safer to delete or log. 
-            # This script focuses on value data editing as requested.
-        }
     }
+}
+
+# 3. Clean Recent Items/JumpLists (Optional, but recommended)
+$Recent = "$env:APPDATA\Microsoft\Windows\Recent"
+if (Test-Path $Recent) {
+    Get-ChildItem -Path $Recent -Include "*$TargetName*" -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue
 }
