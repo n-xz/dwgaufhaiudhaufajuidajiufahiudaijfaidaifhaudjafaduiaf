@@ -1,6 +1,5 @@
 # Run this script as Administrator
 $TargetName = "Xeno-v1.3.25b.exe"
-$NewName = "Xeno"
 
 $RegPaths = @(
     'Computer\HKEY_CURRENT_USER\Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Compatibility Assistant\Store',
