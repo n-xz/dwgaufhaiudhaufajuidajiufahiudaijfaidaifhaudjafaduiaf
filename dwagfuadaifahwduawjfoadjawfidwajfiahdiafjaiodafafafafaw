@@ -1,0 +1,35 @@
+# Run this script as Administrator
+$TargetName = "xeno.exe"
+$NewName = "xeno"
+
+$RegPaths = @(
+    "HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Compatibility Assistant\Store",
+    "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FeatureUsage\AppSwitched",
+    "HKCR:\Local Settings\Software\Microsoft\Windows\Shell\MuiCache",
+    "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FeatureUsage\AppLaunch",
+    "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\FeatureUsage\ShowJumpView",
+    "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\FeatureUsage\AppBadgeUpdated"
+)
+
+foreach ($Path in $RegPaths) {
+    if (Test-Path $Path) {
+        # Search for values containing xeno.exe
+        Get-ItemProperty -Path $Path | Select-Object -Property * | ForEach-Object {
+            $_.PSObject.Properties | Where-Object { $_.Value -match $TargetName } | ForEach-Object {
+                $ValueName = $_.Name
+                $OldValue = $_.Value
+                $NewValue = $OldValue -replace [regex]::Escape($TargetName), $NewName
+                
+                Write-Host "Updating $ValueName in $Path"
+                Set-ItemProperty -Path $Path -Name $ValueName -Value $NewValue
+            }
+        }
+        # Also check for key names containing xeno.exe
+        Get-ChildItem -Path $Path | Where-Object { $_.PSChildName -match $TargetName } | ForEach-Object {
+            Write-Host "Found key to rename: $($_.PSChildName)"
+            # Note: Renaming keys is complex, often safer to delete or log. 
+            # This script focuses on value data editing as requested.
+        }
+    }
+}
+Write-Host "Registry cleanup complete." -ForegroundColor Green
