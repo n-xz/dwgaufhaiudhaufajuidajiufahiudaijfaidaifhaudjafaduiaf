@@ -19,6 +19,7 @@ foreach ($Key in $RegKeys) {
         }
     }
 }
+Write-Host "Registry Cleanup Complete" -ForegroundColor Green
 
 # 3. Clean Recent Items/JumpLists (Optional, but recommended)
 $Recent = "$env:APPDATA\Microsoft\Windows\Recent"
